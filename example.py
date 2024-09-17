@@ -14,11 +14,21 @@ import nirtorch
 
 from brevitas_to_nir import _extract_brevitas_module
 
+n_in = 10
+n_hidden_1 = 100
+n_hidden_2 = 50
+n_out = 2
+
 # Example SNN with QuantLinear layers
 net = nn.Sequential(
-        qnn.QuantLinear(10,100, bias=True, weight_bit_width=8, bias_quant=brevitas.quant.Int8BiasPerTensorFloatInternalScaling),
+        # Affine with quantized weights and quantized bias
+        qnn.QuantLinear(n_in, n_hidden_1, bias=True, weight_bit_width=8, bias_quant=brevitas.quant.Int8BiasPerTensorFloatInternalScaling),
         snn.Leaky(beta=0.9, init_hidden=True),
-        qnn.QuantLinear(100,2, bias=True, weight_bit_width=8),
+        # Affine with quantized weights but non-quantized bias
+        qnn.QuantLinear(n_hidden_1, n_hidden_2, bias=True, weight_bit_width=8),
+        snn.Leaky(beta=0.9, init_hidden=True),
+        # Linear with quantized weights (no bias)
+        qnn.QuantLinear(n_hidden_2, n_out, bias=False, weight_bit_width=8),
         snn.Leaky(beta=0.9, init_hidden=True, output=True)
         )
 
@@ -31,7 +41,7 @@ def combined_module_mapper(module: torch.nn.Module) -> Optional[nir.NIRNode]:
         node = _extract_snntorch_module(module)
     return node
 
-sample_data = torch.randn(10)
+sample_data = torch.randn(n_in)
 print(sample_data)
 nir_graph = nirtorch.extract_nir_graph(
     net,
@@ -78,3 +88,5 @@ print(scaled_weights.round().astype(np.int8)[:2])
 
 # check that int weights are the same
 assert(np.array_equal(scaled_weights.round().astype(np.int8), l1_int_weights))
+
+print(new_nir_graph.edges)
