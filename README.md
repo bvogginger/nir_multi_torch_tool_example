@@ -5,5 +5,5 @@ It also shows the use of the metadata feature for storing the quantization infor
 
 ## Dependencies
 
-- NIRtorch: https://github.com/bvogginger/NIRTorch/tree/brevitas
+- NIRtorch (branch `brevitas` from bvogginger): https://github.com/bvogginger/NIRTorch/tree/brevitas
 - NIR, snntorch, py-spinnaker2, brevitas (default install)
